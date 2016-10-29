@@ -19,60 +19,115 @@
 
 using namespace std;
 
+// The terminal prompt elements
+char machineName[HOST_NAME_MAX];
+char currentDirectory[PATH_MAX];
+char * userName;
+
+/**
+ * Reads a line from user and returns it. The user needs to
+ * press "Enter" to stop inputting
+ *
+ * @return the input line.
+ */
+string readLine() {
+	// Display the terminal prompt line
+	printf("%s@%s:%s$", userName, machineName,currentDirectory);
+
+	// Read the command
+	string inputLine;
+	getline(cin,inputLine);
+
+	return inputLine;
+}
+
+/**
+ * Reutrns an array of the sent string splitted into words
+ *
+ * @param		line	the command and all of its arguments in one string
+ * @return 				the array of words
+ */
+char **splitLine(string line) {
+	char delimiter = ' ';
+	stringstream ss;
+	ss.str(line);
+	string tmpString;
+	vector<string> args;
+
+	while(getline(ss,tmpString,delimiter)) {
+		args.push_back(tmpString);
+	}
+	// storing args as char* for execvp function
+	char ** args_ch ;
+	args_ch = new char*[args.size()]; // allocating memory for number of args
+	char * tmp_ch;
+	for(int i = 0; i < args.size(); i++)
+	{
+		args_ch[i] = new char[args[i].size()];
+		tmp_ch = new char[args[i].size()]; // allocating memory for the size of each arg
+		strcpy(tmp_ch,args[i].c_str());
+		args_ch[i] = tmp_ch;
+	}
+	args_ch[args.size()] = NULL; // necessary to terminate the char ** with a null for correct functionality of execvp
+	return args_ch;
+}
+
+/**
+ * Forks the process and executes the passed command in args[0]
+ *
+ * @param		args	an array of arrays of characters where args[0] is
+ 									the desired command to be run and the rest are the
+									different arguments with the final argument being
+									a null terminator
+ */
+void executeCommand(char **args) {
+	// Parse and execute
+	int pid, stat_loc;
+	pid = fork();
+	if (pid == -1) {
+		perror("error in fork");
+		//handling of the child
+	} else if (pid == 0) {
+		// Execute the command in a new process using execvp
+		if (execvp(args[0], args) == -1) {
+				perror("execvp error!");
+		}
+		return;
+		//handling of the parent
+	} else {
+		pid = wait(&stat_loc);
+		if (!(stat_loc & 0x00FF)) {
+			//printf("the child terminated\n");
+		}
+	}
+}
+
+/**
+ * The core of the shell. It reads the command from the user,
+ * splits the user input, and executes the command
+ */
 void mainloop() {
 	int status = 1; // Status of the shell
 	do {
-		// Display the default line while waiting for input command
-		char * userName = getlogin();
-		char machineName[HOST_NAME_MAX];
-		char currentDirectory[PATH_MAX];
-		getcwd(currentDirectory,PATH_MAX);
-		gethostname(machineName,HOST_NAME_MAX);
-
-		printf("%s@%s:%s$", userName, machineName,currentDirectory);
 
 		// Read the command
-		string command;
-		getline(cin,command);
+		string line = readLine();
 
 		// Split the command line to its elements: command, options, arguments (separated by space)
-		char delimiter = ' ';
-		stringstream ss;
-		ss.str(command);
-		string tmpString;
-		vector<string> commandElements;
+		char** args = splitLine(line);
 
-		while(getline(ss,tmpString,delimiter)) {
-			commandElements.push_back(tmpString);
-		}
-
-		for (int i = 0 ; i < commandElements.size(); i++)
-			printf("%s\n",commandElements[i].c_str() );
-
-		// Parse and execute
-		int pid, stat_loc;
-		pid = fork();
-		if (pid == -1) {
-			perror("error in fork");
-			//handling of the child
-		} else if (pid == 0) {
-			printf("This is the child op\n");
-			return;
-			//handling of the parent
-		} else {
-			pid = wait(&stat_loc);
-			if (!(stat_loc & 0x00FF)) {
-				printf("the child terminated\n");
-			}
-		}
-		// A built-in command
-
-		// A process
+		// Executes the input command with the arguments
+		executeCommand(args);
 
 	} while(status);
 }
 
 int main(int argc, char ** argv) {
+	// initialization of the terminal prompt elements
+	userName = getlogin();
+	getcwd(currentDirectory,PATH_MAX);
+	gethostname(machineName,HOST_NAME_MAX);
+
 	mainloop();
 	return 0;
 }
