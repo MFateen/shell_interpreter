@@ -76,11 +76,11 @@ char **splitLine(string line) {
  * Forks the process and executes the passed command in args[0]
  *
  * @param		args	an array of arrays of characters where args[0] is
- 									the desired command to be run and the rest are the
-									different arguments with the final argument being
-									a null terminator
+ *								the desired command to be run and the rest are the
+ *								different arguments with the final argument being
+ *								a null terminator
  */
-void executeCommand(char **args) {
+void launchCommand(char **args) {
 	// Parse and execute
 	int pid, stat_loc;
 	pid = fork();
@@ -99,6 +99,25 @@ void executeCommand(char **args) {
 		if (!(stat_loc & 0x00FF)) {
 			//printf("the child terminated\n");
 		}
+	}
+}
+
+/**TODO write documentation*/
+int changeDirectory(char **args) {
+	if (args[1] == NULL) {
+		fprintf(stderr, "cd command expects arguments");
+	} else if (chdir(args[1]) != 0) {
+			perror("Error in change directory");
+	}
+	return 1;
+}
+
+/**TODO write documentation*/
+void executeCommand(char **args) {
+	if (strcmp(args[0], "cd") == 0) {
+		changeDirectory(args);
+	} else {
+		launchCommand(args);
 	}
 }
 
