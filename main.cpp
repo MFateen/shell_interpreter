@@ -14,6 +14,8 @@
 #include <string.h>
 #include <limits.h>
 #include <iostream>
+#include <vector>
+#include <sstream>
 
 using namespace std;
 int main(int argc, char ** argv)
@@ -33,8 +35,19 @@ int main(int argc, char ** argv)
 
 		// Read the command
 		string command;
-		cin >> command;
-		// Split the line
+		getline(cin,command);
+		// Split the command line to its elements: command, options, arguments (separated by space)
+		char delimiter = ' ';
+		stringstream ss;
+		ss.str(command);
+		string tmpString;
+		vector<string> commandElements;
+		while(getline(ss,tmpString,delimiter))
+		{
+			commandElements.push_back(tmpString);
+		}
+		// for (int i = 0 ; i < commandElements.size(); i++)
+		// 	printf("%s\n",commandElements[i].c_str() );
 
 		// Parse and execute
 
