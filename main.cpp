@@ -96,19 +96,20 @@ void launchCommand(char **args) {
 		//handling of the parent
 	} else {
 		pid = wait(&stat_loc);
-		if (!(stat_loc & 0x00FF)) {
-			//printf("the child terminated\n");
-		}
+		if (!(stat_loc & 0x00FF)) {}
 	}
 }
 
 /**TODO write documentation*/
 int changeDirectory(char **args) {
-	if (args[1] == NULL) {
-		fprintf(stderr, "cd command expects arguments");
+	if (args[1] == NULL || strcmp(args[1], "~") == 0) {
+		chdir(getenv("HOME"));
 	} else if (chdir(args[1]) != 0) {
-			perror("Error in change directory");
+		//TODO convert args[1]
+		// perror("Error in change directory: %s\n",args[1]);
+		perror("Error in change directory:");
 	}
+	getcwd(currentDirectory,PATH_MAX);
 	return 1;
 }
 
