@@ -16,6 +16,7 @@
 #include <iostream>
 #include <vector>
 #include <sstream>
+#include <signal.h>
 
 using namespace std;
 
@@ -23,7 +24,32 @@ using namespace std;
 char machineName[HOST_NAME_MAX];
 char currentDirectory[PATH_MAX];
 char * userName;
+// Storing the shell process ID
+int parentID;
 
+/**
+ * Called when Ctrl+C signal is received
+ * Exit the child process if it exists
+ * Prints a new line in the parent process
+ */
+void ctrlCHandler(int s){
+	// Kill the child process and sends 2 on exit to parent
+	if(getpid() != parentID)
+	    exit(2); 
+	else // The parent process
+	{
+		int child_status;
+		wait(&child_status);
+		// If the parent does not have a child, print the prompt line
+		if(child_status!=2)
+		{
+			printf("\n%s@%s:%s$ ", userName, machineName,currentDirectory);
+	    	fflush(stdout);
+	    }
+	    else // If the parent already has a child, enter a new line 
+	    	printf("\n");
+	}
+}
 /**
  * Reads a line from user and returns it. The user needs to
  * press "Enter" to stop inputting
@@ -32,7 +58,7 @@ char * userName;
  */
 string readLine() {
 	// Display the terminal prompt line
-	printf("%s@%s:%s$", userName, machineName,currentDirectory);
+	printf("%s@%s:%s$ ", userName, machineName,currentDirectory);
 
 	// Read the command
 	string inputLine;
@@ -115,6 +141,7 @@ int changeDirectory(char **args) {
 
 /**TODO write documentation*/
 void executeCommand(char **args) {
+	//TODO handle the case where there is no arguments
 	if (strcmp(args[0], "cd") == 0) {
 		changeDirectory(args);
 	} else {
@@ -148,6 +175,9 @@ int main(int argc, char ** argv) {
 	getcwd(currentDirectory,PATH_MAX);
 	gethostname(machineName,HOST_NAME_MAX);
 
+	parentID = getpid();
+	// Handling Ctrl+C
+	signal (SIGINT,ctrlCHandler);
 	mainloop();
 	return 0;
 }
