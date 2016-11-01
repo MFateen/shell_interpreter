@@ -116,7 +116,7 @@ void launchCommand(char **args) {
 	} else if (pid == 0) {
 		// Execute the command in a new process using execvp
 		if (execvp(args[0], args) == -1) {
-				perror("execvp error!");
+				printf("%s: command not found\n", args[0]);
 		}
 		return;
 		//handling of the parent
