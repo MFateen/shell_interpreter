@@ -26,6 +26,7 @@ char currentDirectory[PATH_MAX];
 char * userName;
 // Storing the shell process ID
 int parentID;
+bool bkgndProc = false;
 
 /**
  * Called when Ctrl+C signal is received
@@ -35,7 +36,7 @@ int parentID;
 void ctrlCHandler(int s){
 	// Kill the child process and sends 2 on exit to parent
 	if(getpid() != parentID)
-	    exit(2); 
+	    exit(2);
 	else // The parent process
 	{
 		int child_status;
@@ -46,10 +47,11 @@ void ctrlCHandler(int s){
 			printf("\n%s@%s:%s$ ", userName, machineName,currentDirectory);
 	    	fflush(stdout);
 	    }
-	    else // If the parent already has a child, enter a new line 
+	    else // If the parent already has a child, enter a new line
 	    	printf("\n");
 	}
 }
+
 /**
  * Reads a line from user and returns it. The user needs to
  * press "Enter" to stop inputting
@@ -74,6 +76,11 @@ string readLine() {
  * @return 				the array of words
  */
 char **splitLine(string line) {
+	if (*line.rbegin() == '&') {
+		*line.rbegin() = '\0';
+		bkgndProc = true;
+	}
+
 	char delimiter = ' ';
 	stringstream ss;
 	ss.str(line);
@@ -121,8 +128,12 @@ void launchCommand(char **args) {
 		return;
 		//handling of the parent
 	} else {
-		pid = wait(&stat_loc);
-		if (!(stat_loc & 0x00FF)) {}
+		if (bkgndProc) {
+			//add to history
+		} else {
+			pid = wait(&stat_loc);
+			if (!(stat_loc & 0x00FF)) {}
+		}
 	}
 }
 
@@ -156,7 +167,7 @@ void executeCommand(char **args) {
 void mainloop() {
 	int status = 1; // Status of the shell
 	do {
-
+		bkgndProc = false;
 		// Read the command
 		string line = readLine();
 
