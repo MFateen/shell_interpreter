@@ -26,6 +26,8 @@ char currentDirectory[PATH_MAX];
 char * userName;
 // Storing the shell process ID
 int parentID;
+// int foreground process ID
+int forgndProc;
 bool bkgndProc = false;
 
 /**
@@ -34,20 +36,18 @@ bool bkgndProc = false;
  * Prints a new line in the parent process
  */
 void ctrlCHandler(int s){
-	// Kill the child process and sends 2 on exit to parent
-	if(getpid() != parentID)
-	    exit(2);
-	else // The parent process
-	{
-		int child_status;
-		wait(&child_status);
-		// If the parent does not have a child, print the prompt line
-		if(child_status!=2)
-		{
+
+	// The parent process
+	if (getpid() == parentID){
+		int child_status, wait_ret;
+		// wait for the foreground process child
+		wait_ret = waitpid(forgndProc,&child_status,WUNTRACED);
+		// If the parent does not have a child in the foreground, print the prompt line
+		if(wait_ret==-1){
 			printf("\n%s@%s:%s$ ", userName, machineName,currentDirectory);
 	    	fflush(stdout);
 	    }
-	    else // If the parent already has a child, enter a new line
+	    else // If the parent already has a foreground child, enter a new line
 	    	printf("\n");
 	}
 }
@@ -121,6 +121,9 @@ void launchCommand(char **args) {
 		perror("error in fork");
 		//handling of the child
 	} else if (pid == 0) {
+		// Set the background process in a new session to avoid Ctrl+C signal affecting them
+		if (bkgndProc)
+			setsid();
 		// Execute the command in a new process using execvp
 		if (execvp(args[0], args) == -1) {
 				printf("%s: command not found\n", args[0]);
@@ -131,6 +134,7 @@ void launchCommand(char **args) {
 		if (bkgndProc) {
 			//add to history
 		} else {
+			forgndProc = pid;
 			pid = wait(&stat_loc);
 			if (!(stat_loc & 0x00FF)) {}
 		}
