@@ -5,6 +5,7 @@
  * @author Mostafa Fateen
  * @brief main for the shell interpreter
  * @ref https://github.com/brenns10/lsh/blob/master/src/main.cd
+ * @ref http://web.mit.edu/gnu/doc/html/rlman_2.html
  */
 
 #include <sys/wait.h>
@@ -18,17 +19,42 @@
 #include <sstream>
 #include <signal.h>
 
+#include <readline/readline.h>
+#include <readline/history.h>
+
 using namespace std;
 
 // The terminal prompt elements
 char machineName[HOST_NAME_MAX];
 char currentDirectory[PATH_MAX];
 char * userName;
+char prompt[HOST_NAME_MAX+PATH_MAX+1000];
 // Storing the shell process ID
 int parentID;
 // int foreground process ID
 int forgndProc;
 bool bkgndProc = false;
+
+
+/* Read a string, and return a pointer to it.  Returns NULL on EOF. */
+string rl_gets ()
+{
+	// read line 
+	char *line_read = (char *)NULL;
+	/* Get a line from the user. */
+	// prompt
+	//string s = "r" + "wr";
+	//char * s = "roger";
+ 	line_read = readline (prompt);
+
+	/* If the line has any text in it, save it on the history. */
+	if (line_read && *line_read)
+    	add_history (line_read);
+
+	string line(line_read);
+	free(line_read);
+	return (line);
+}
 
 /**
  * Called when Ctrl+C signal is received
@@ -60,11 +86,11 @@ void ctrlCHandler(int s){
  */
 string readLine() {
 	// Display the terminal prompt line
-	printf("%s@%s:%s$ ", userName, machineName,currentDirectory);
+	//printf("%s@%s:%s$ ", userName, machineName,currentDirectory);
 
 	// Read the command
-	string inputLine;
-	getline(cin,inputLine);
+	string inputLine = rl_gets();
+	//getline(cin,inputLine);
 
 	return inputLine;
 }
@@ -189,6 +215,15 @@ int main(int argc, char ** argv) {
 	userName = getlogin();
 	getcwd(currentDirectory,PATH_MAX);
 	gethostname(machineName,HOST_NAME_MAX);
+	strcpy(prompt, "");
+	strcat(prompt,userName);
+	strcat(prompt,"@");
+	strcat(prompt,machineName);
+	strcat(prompt,":");
+	strcat(prompt,currentDirectory);
+	strcat(prompt,"$ ");
+
+	//"\n%s@%s:%s$ ", userName, machineName,currentDirectory)
 
 	parentID = getpid();
 	// Handling Ctrl+C
