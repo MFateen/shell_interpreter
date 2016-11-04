@@ -19,9 +19,6 @@
 #include <sstream>
 #include <signal.h>
 
-#include <readline/readline.h>
-#include <readline/history.h>
-
 using namespace std;
 // Maximum length of a user name
 #define USER_NAME_MAX 1000
@@ -65,31 +62,25 @@ void updatePrompt() {
 }
 
 /**
- * Reads input from stdin allowing history and tab completion. It also sets the
- * global boolean bkgndProc to true if there was an '&' at the end of the input
+ * Reads a line from user and returns it. The user needs to
+ * press "Enter" to stop inputting
  *
- * @return the input string
- * @see http://web.mit.edu/gnu/doc/html/rlman_2.html
+ * @return the input line.
  */
-string readLine () {
-	// read line
-	char *line_read = (char *)NULL;
-	// read input while shwing the prompt line
- 	line_read = readline (prompt);
+string readLine() {
+ // Display the terminal prompt line
+ updatePrompt();
+ printf("%s", prompt);
+ // Read the command
+ string inputLine;
+ getline(cin,inputLine);
 
-	/* If the line has any text in it, save it on the history. */
-	if (line_read && *line_read)
-    	add_history (line_read);
+ if (*inputLine.rbegin() == '&') {
+	 *inputLine.rbegin() = '\0';
+	 bkgndProc = true;
+ }
 
-	string line(line_read);
-	free(line_read);
-
-	if (*line.rbegin() == '&') {
-		*line.rbegin() = '\0';
-		bkgndProc = true;
-	}
-
-	return line;
+ return inputLine;
 }
 
 /**

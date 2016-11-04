@@ -1,6 +1,6 @@
 
 main: main.o
-	g++ main.cpp -lreadline -o main.o
+	g++ main.cpp -o main.o
 
 
 clean :
